@@ -1,31 +1,78 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Hackathon API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS TypeScript API with Prisma and Arcjet security middleware. The project currently acts as a secure starter backend with a global request guard, Prisma database access, and a small set of health/testing endpoints.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Overview
 
-## Description
+This API is structured around a typical NestJS request lifecycle:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+1. The app boots in `src/main.ts`.
+2. A global Arcjet middleware runs before routing.
+3. Requests are evaluated for bot traffic, shield protection, and rate limits.
+4. Allowed traffic enters the Nest controller layer.
+5. The app can access Postgres via Prisma services and generated Prisma client code.
 
-## Project setup
+## Current project structure
+
+```text
+.
+├── .env                       # Local runtime environment variables
+├── .gitignore
+├── ARCJET_INTEGRATION.md      # Arcjet integration notes
+├── TEST_ARCJET_INTEGRATION.md # Verification notes for the middleware
+├── README.md                  # Project overview
+├── nest-cli.json
+├── package.json
+├── prisma/
+│   ├── migrations/
+│   └── migrations_lock.toml
+├── src/
+│   ├── app.controller.spec.ts
+│   ├── app.controller.ts      # GET /
+│   ├── app.module.ts          # Registers controllers and Prisma module
+│   ├── app.service.ts         # Root payload service
+│   ├── common/
+│   │   └── middleware/
+│   │       └── arcjet.middleware.ts
+│   ├── generated/
+│   │   └── prisma/             # Generated Prisma client output
+│   ├── lib/
+│   │   └── database/
+│   │       ├── prisma.module.ts
+│   │       └── prisma.service.ts
+│   ├── main.ts                # App bootstrap and global middleware registration
+│   ├── prisma/
+│   │   └── schema.prisma      # Prisma schema for User/Post models
+│   └── test/
+│       └── test
+│           └── test.controller.ts
+├── test/
+│   └── app.e2e-spec.ts
+├── test-arcjet.js             # Arcjet SDK smoke test
+├── tsconfig.json
+├── tsconfig.build.json
+├── vitest.config.ts
+├── vitest.config.e2e.ts
+└── package-lock.json
+```
+
+## API design flow
+
+### 1. Bootstrap and middleware
+
+`src/main.ts` creates the Nest application and then registers the Arcjet middleware globally:
+
+```ts
+const app = await NestFactory.create(AppModule);
+app.use(new ArcjetMiddleware().use.bind(new ArcjetMiddleware()));
+await app.listen(process.env.PORT ?? 3000);
+```
+
+This means every incoming request is checked before controller logic executes.
+
+### 2. Arcjet protection layers
+
+The middleware in `src/common/middleware/arcjet.middleware.ts` uses Arcjet with three defenses:
 
 ```bash
 $ npm install
