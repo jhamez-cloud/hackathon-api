@@ -44,11 +44,11 @@ This API is structured around a typical NestJS request lifecycle:
 │   ├── prisma/
 │   │   └── schema.prisma      # Prisma schema for User/Post models
 │   └── test/
-│       └── test/
+│       └── test
 │           └── test.controller.ts
 ├── test/
 │   └── app.e2e-spec.ts
-├── test-arcjet.js             # Quick Arcjet SDK smoke test
+├── test-arcjet.js             # Arcjet SDK smoke test
 ├── tsconfig.json
 ├── tsconfig.build.json
 ├── vitest.config.ts
